@@ -1,13 +1,34 @@
 package com.jonathanfinerty.store;
 
+import android.content.Context;
+import android.os.Environment;
 import android.support.annotation.IntDef;
 
+import java.io.File;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
 import java.util.List;
 
 public class Store {
+
+    @Retention(RetentionPolicy.SOURCE)
+    @IntDef({INTERNAL, EXTERNAL})
+    public @interface StorageArea {
+    }
+
+    public static final int INTERNAL = 0;
+    public static final int EXTERNAL = 1;
+
+    @Retention(RetentionPolicy.SOURCE)
+    @IntDef({BYTES, KB, MB, GB})
+    public @interface Unit {
+    }
+
+    public static final int BYTES = 0;
+    public static final int KB = 1;
+    public static final int MB = 2;
+    public static final int GB = 3;
 
     @Retention(RetentionPolicy.SOURCE)
     @IntDef({NEVER_EVICT, DEFAULT})
@@ -17,12 +38,30 @@ public class Store {
     public static final int NEVER_EVICT = 0;
     public static final int DEFAULT = 1;
 
+    private final File rootDir;
+
+    Store(Context context, @StorageArea int storageLocation, String folderName) {
+        File storageDirectory;
+        if (storageLocation == INTERNAL) {
+            storageDirectory = context.getFilesDir();
+        } else {
+            storageDirectory = Environment.getExternalStorageDirectory();
+        }
+
+        rootDir = FileUtils.getOrMakeDir(storageDirectory, folderName);
+    }
+
     public Location location(Key key) {
-        return new Location();
+        return new Location(this, key);
     }
 
     public <T> Location location(T type) {
-        return new Location();
+        Key key = getKeyForObject(type);
+        return new Location(this, key);
+    }
+
+    public Location location(String key) {
+        return new Location(this, new StringKey(key));
     }
 
     public void deleteAll() {
@@ -31,6 +70,14 @@ public class Store {
 
     public List<Location> getAll() {
         return new ArrayList<>();
+    }
+
+    private <T> Key getKeyForObject(T type) {
+        return null;
+    }
+
+    File getRootDir() {
+        return rootDir;
     }
 
     /*
@@ -71,23 +118,21 @@ public class Store {
     */
     public static class Builder {
 
-        @Retention(RetentionPolicy.SOURCE)
-        @IntDef({BYTES, KB, MB, GB})
-        public @interface Unit {
+        private Context context;
+        private String folderName = "store-folder";
+        private int storageArea = INTERNAL;
+
+        public Builder(Context context) {
+            this.context = context;
         }
 
-        public static final int BYTES = 0;
-        public static final int KB = 1;
-        public static final int MB = 2;
-        public static final int GB = 3;
-
-        public Builder location() {
-            // cache folder, in-app, sd-card, custom?
+        public Builder location(@StorageArea int storageArea) {
+            this.storageArea = storageArea;
             return this;
         }
 
-        public Builder name(String name) {
-            // name of parent folder
+        public Builder inFolder(String folderName) {
+            this.folderName = folderName;
             return this;
         }
 
@@ -108,7 +153,7 @@ public class Store {
         // max size of individual thing
 
         public Store build() {
-            return new Store();
+            return new Store(context, storageArea, folderName);
         }
     }
 

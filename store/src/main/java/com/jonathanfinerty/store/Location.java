@@ -1,20 +1,34 @@
 package com.jonathanfinerty.store;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.InputStream;
 
 public class Location {
+
+    private final Store store;
+    private final Key key;
+
+    Location(Store store, Key key) {
+        this.store = store;
+        this.key = key;
+    }
+
     public Writer prepareWrite(InputStream content) {
-        return new Writer();
+        return new Writer(this, content);
     }
 
     public Key write(InputStream content) {
-        return new Writer().write();
+        return prepareWrite(content).write();
     }
 
-    public <T> InputStream read() {
-        return new ByteArrayInputStream(new byte[0]);
+    public InputStream read() {
+        try {
+            return new FileInputStream(getFile());
+        } catch (FileNotFoundException e) {
+            return null;
+        }
     }
 
     public void delete() {
@@ -26,10 +40,11 @@ public class Location {
     }
 
     public File getFile() {
-        return new File("");
+        File rootDir = store.getRootDir();
+        return new File(rootDir, key.getUniqueId());
     }
 
     public Key getKey() {
-        return null;
+        return key;
     }
 }

@@ -1,8 +1,17 @@
 package com.jonathanfinerty.store;
 
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+
 public class Writer {
 
-    public Writer() {
+    private final Location location;
+    private final InputStream inputStream;
+
+    Writer(Location location, InputStream inputStream) {
+        this.location = location;
+        this.inputStream = inputStream;
     }
 
     public Writer withProgressListener(ProgressListener listener) {
@@ -22,6 +31,35 @@ public class Writer {
     }
 
     public Key write() {
-        return null;
+
+        FileOutputStream fileOutputStream = null;
+
+        try {
+            fileOutputStream = new FileOutputStream(location.getFile());
+
+            int byteCountRead;
+            byte[] buffer = new byte[8096];
+
+            while ((byteCountRead = inputStream.read(buffer)) != -1) {
+                fileOutputStream.write(buffer, 0, byteCountRead);
+            }
+        } catch (IOException e) {
+            // todo: silent | noisy failures
+        } finally {
+            try {
+                if (inputStream != null) {
+                    inputStream.close();
+                }
+
+                if (fileOutputStream != null) {
+                    fileOutputStream.close();
+                }
+            } catch (IOException e) {
+                // todo: silent | noisy failures
+            }
+        }
+
+        return location.getKey();
     }
+
 }
