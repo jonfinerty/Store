@@ -49,6 +49,8 @@ captures/
 .idea/dictionaries
 .idea/vcs.xml
 .idea/jsLibraryMappings.xml
+.idea/compiler.xml
+.idea/misc.xml
 
 # Gradle:
 .idea/gradle.xml
